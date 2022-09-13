@@ -1,0 +1,60 @@
+/*
+package cryptoTrader.gui;
+
+import java.io.FileNotFoundException;
+import java.io.BufferedReader;
+import java.io.FileReader;
+
+import cryptoTrader.utils.StringReader;
+
+public class loginUI {
+
+	public static void main(String[] args) throws FileNotFoundException {
+
+		BufferedReader FileReader = new BufferedReader(new FileReader("credentials.txt"));
+		StringReader input = new StringReader();
+		
+		int i = 0;
+		boolean t = false;
+		String user = " ",pwd = " ";
+		
+		//catches input
+		try {
+			while(i < 2) {
+				if(i == 0) {
+					user = input.read("Enter Username:" + "\n");
+					i++;
+				} else {
+					pwd = input.read("Enter Password:" + "\n");
+					i++;
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("Exception caught");
+		}
+		
+		//comparing input to credentials file
+		try {
+			String first = FileReader.readLine();
+			
+			while(first != null && t == false) {
+				String second = FileReader.readLine();
+				
+				if (user.compareTo(first) == 0 && pwd.compareTo(second) == 0) {
+					t = true;
+				} else {
+					first = FileReader.readLine();
+				}
+			}
+			
+			if(t == true) {
+				System.out.println("Welcome!");
+			} else {
+				System.out.println("Incorrect credentials...");
+			}
+		} catch (Exception e) {
+			System.out.println("Exception caught");
+		}
+	}
+}
+*/
