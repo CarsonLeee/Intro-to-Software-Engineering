@@ -1,0 +1,110 @@
+package cryptoTrader.gui;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.*;
+import javax.swing.event.*;
+import java.io.FileNotFoundException;
+import java.io.BufferedReader;
+import java.io.FileReader;
+
+
+public class UI implements ActionListener {
+	private static JLabel password_label, label;
+	private static JTextField username;
+	private static JButton button;
+	private static JPasswordField password;
+		
+	
+	public static void addComponents(Container panel) throws Exception{
+
+		panel.setLayout(new GridBagLayout());
+		GridBagConstraints c = new GridBagConstraints();
+		
+		label = new JLabel("Username");
+		label.setBounds(100,8,70,20);
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 0;
+		c.gridy = 0;
+		panel.add(label,c);
+		
+		username = new JTextField();
+		c.gridy = 1;
+		panel.add(username,c);
+		
+		password_label = new JLabel("Password");
+		c.gridy = 2;
+		panel.add(password_label,c);
+		
+		password = new JPasswordField();
+		c.gridy = 3;
+		panel.add(password,c);
+		
+		button = new JButton("Login");
+		button.setForeground(Color.WHITE);
+		button.setBackground(Color.BLACK);
+		button.addActionListener((ActionListener) new UI());
+		c.gridy = 4;
+		panel.add(button,c);
+		
+	}
+	
+	public void actionPerformed(ActionEvent arg0) {
+		
+		String Username = username.getText();
+		String Password = String.valueOf(password.getPassword());
+		boolean t = false;
+		
+		try {
+			BufferedReader FileReader = new BufferedReader(new FileReader("credentials.txt"));
+			String first = FileReader.readLine();
+			
+			while(first != null && t == false) {
+				String second = FileReader.readLine();
+				
+				if (Username.compareTo(first) == 0 && Password.compareTo(second) == 0) {
+					t = true;
+				} else {
+					first = FileReader.readLine();
+				}
+			}
+			
+			if(t == true) {
+				JOptionPane.showMessageDialog(null, "Login Successful");
+				
+			} else {
+				JOptionPane.showMessageDialog(null, "Username or Password Incorrect");
+			}
+		} catch (Exception e) {
+			System.out.println("Exception caught");
+		}
+	}
+	
+	//TODO need to change default close operation to on click of login button
+    private static void createAndShowGUI() throws Exception {
+		JFrame frame = new JFrame();
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setTitle("Login");
+		addComponents(frame.getContentPane());
+		
+		frame.pack();
+		frame.setVisible(true);
+		
+    }
+
+	
+	public static void main(String[] args) {
+        javax.swing.SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                try {
+					createAndShowGUI();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+            }
+        });
+	}
+}
+
+
+
