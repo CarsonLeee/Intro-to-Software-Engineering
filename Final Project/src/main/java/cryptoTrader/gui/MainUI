@@ -1,0 +1,257 @@
+package cryptoTrader.gui;
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Vector;
+
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultCellEditor;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
+
+import cryptoTrader.utils.AvailableCryptoList;
+
+import cryptoTrader.charts.DataVisualizationCreator;
+
+import cryptoTrader.units.Broker;
+import cryptoTrader.units.IStrategy;
+import cryptoTrader.units.StrategyA;
+import cryptoTrader.units.StrategyB;
+import cryptoTrader.units.StrategyC;
+
+public class MainUI extends JFrame implements ActionListener {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	private static MainUI instance;
+	private JPanel stats;
+
+	private DefaultTableModel dtm;
+	private JTable table;
+
+	//List of available cryptos
+	private String[] avCryptos;
+
+	//HashMap to map strategies with their objects
+	private HashMap<String, IStrategy> strategiesMap;
+
+	//HashMap to map all cryptos abbreviations to their names
+	private HashMap<String, String> cryptosAbbvs;
+
+	//List of all trades done so far
+	private ArrayList<String[]> trades;
+
+	//HashMap representing the strategies and their respective brokers actions
+	private HashMap<String, HashMap<String, Integer>> bars;
+
+	public static MainUI getInstance() {
+		if (instance == null)
+			instance = new MainUI();
+
+		return instance;
+	}
+
+	//Getter for trades
+	public ArrayList<String[]> getTrades() {
+		return trades;
+	}
+
+	//Getter for map of strategies-brokers
+	public HashMap<String, HashMap<String, Integer>> getBars() {
+		return bars;
+	}
+
+	//Getter for abbreviations
+	public HashMap<String, String> getAbbvsMap() {
+		return cryptosAbbvs;
+	}
+
+
+	private MainUI() {
+
+		// Set window title
+		super("Crypto Trading Tool");
+
+		//Set close operation on EXIT
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+		//Init map for strategies-brokers
+		bars = new HashMap<String, HashMap<String, Integer>>();
+
+		// Set map of strategies
+		strategiesMap = new HashMap<String, IStrategy>();
+		IStrategy[] strats = new IStrategy[]{new StrategyA(), new StrategyB(), new StrategyC()};
+		for(int i = 0; i < strats.length; i++) {
+			strategiesMap.put(strats[i].getName(), strats[i]);
+			bars.put(strats[i].getName(), new HashMap<String, Integer>());
+		}
+
+		// Set map of cryptos abbreviations. This needs to map real abbreviations
+		//with the names expected by the data fetcher
+		cryptosAbbvs = new HashMap<String, String>();
+		cryptosAbbvs.put("BTC", "Bitcoin");
+		cryptosAbbvs.put("ETH", "Ethereum");
+		cryptosAbbvs.put("ADA", "Cardano");
+		cryptosAbbvs.put("XRP", "Ripple");
+		cryptosAbbvs.put("LTC", "Litecoin");
+		//TODO -> Add all the needed mappings in here! Check the valid names according to CoinGecko
+		
+
+		//Init ArrayList of trades
+		trades = new ArrayList<String[]>();
+
+		//Button for trade
+		JButton trade = new JButton("Perform Trade");
+		trade.setActionCommand("refresh");
+		trade.addActionListener(this);
+
+		//South panel for trade button
+		JPanel south = new JPanel();
+		south.add(trade);
+
+		//Table for input brokers
+		dtm = new DefaultTableModel(new Object[] { "Trading Client", "Coin List", "Strategy Name" }, 1);
+		table = new JTable(dtm);
+		JScrollPane scrollPane = new JScrollPane(table);
+		scrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Trading Client Actions",
+				TitledBorder.CENTER, TitledBorder.TOP));
+		Vector<String> strategyNames = new Vector<String>();
+		strategyNames.add("None");
+		for(String s : strategiesMap.keySet()) {
+			strategyNames.add(s);
+		}
+		TableColumn strategyColumn = table.getColumnModel().getColumn(2);
+		JComboBox<String> comboBox = new JComboBox<String>(strategyNames);
+		strategyColumn.setCellEditor(new DefaultCellEditor(comboBox));
+		JButton addRow = new JButton("Add Row");
+		JButton remRow = new JButton("Remove Row");
+		addRow.setActionCommand("addTableRow");
+		addRow.addActionListener(this);
+		remRow.setActionCommand("remTableRow");
+		remRow.addActionListener(this);
+
+		table.setFillsViewportHeight(true);
+
+		//East panel
+		JPanel east = new JPanel();
+		east.setLayout(new BoxLayout(east, BoxLayout.Y_AXIS));
+		east.add(scrollPane);
+		JPanel buttons = new JPanel();
+		buttons.setLayout(new BoxLayout(buttons, BoxLayout.X_AXIS));
+		buttons.add(addRow);
+		buttons.add(remRow);
+		east.add(buttons);
+
+		// Set charts region
+		JPanel west = new JPanel();
+		west.setPreferredSize(new Dimension(1250, 650));
+		stats = new JPanel();
+		stats.setLayout(new GridLayout(2, 2));
+
+		west.add(stats);
+
+		getContentPane().add(east, BorderLayout.EAST);
+		getContentPane().add(west, BorderLayout.CENTER);
+		getContentPane().add(south, BorderLayout.SOUTH);
+
+		//When the program starts, we get the list of available cryptos
+		AvailableCryptoList av = AvailableCryptoList.getInstance();
+		avCryptos = av.getAvailableCryptos();
+
+	}
+
+	public void updateStats(JComponent component) {
+		stats.add(component);
+		stats.revalidate();
+	}
+
+	public static void main(String[] args) {
+		JFrame frame = MainUI.getInstance();
+		frame.setSize(900, 600);
+		frame.pack();
+		frame.setVisible(true);
+	}
+
+	public void actionPerformed(ActionEvent e) {
+		String command = e.getActionCommand();
+		if ("refresh".equals(command)) {
+			//Initialize a List of brokers
+			ArrayList<Broker> brokers = new ArrayList<Broker>();
+			for (int count = 0; count < dtm.getRowCount(); count++){
+				//Check for valid name
+				Object traderObject = dtm.getValueAt(count, 0);
+				if (traderObject == null) {
+					JOptionPane.showMessageDialog(this, "please fill in Trader name on line " + (count + 1) );
+					return;
+				}
+				//Check for valid list of cryptos
+				Broker br = new Broker(traderObject.toString());
+				Object coinObject = dtm.getValueAt(count, 1);
+				if (coinObject == null) {
+					JOptionPane.showMessageDialog(this, "please fill in cryptocoin list on line " + (count + 1) );
+					return;
+				}
+				String[] coinNames = coinObject.toString().split(",");
+				for(int i = 0; i < coinNames.length; i++) {
+					//Make sure the coin is within available cryptos
+					String name = cryptosAbbvs.get(coinNames[i].trim());
+					boolean found = false;
+					for(int j = 0; j < avCryptos.length && name != null; j++) {
+						if(name.equals(avCryptos[j])) {
+							found = true;
+							break;
+						}
+					}
+					if(!found) {
+						JOptionPane.showMessageDialog(this, "For Trader #" + (count+1) + ", crypto " + coinNames[i] + " is not available");
+						return;
+					}
+					//If found, add it to broker
+					br.addCoin(name);
+				}
+				Object strategyObject = dtm.getValueAt(count, 2);
+				if (strategyObject == null) {
+					JOptionPane.showMessageDialog(this, "please fill in strategy name on line " + (count + 1) );
+					return;
+				}
+				br.setStrategy(strategiesMap.get(strategyObject.toString()));
+				//If all values are good for current trader, add it to list of traders
+				brokers.add(br);
+				//Also, add it to map of strategies-brokers (if not there)
+				if(bars.get(br.getStrategy().getName()).get(br.getName()) == null) {
+					bars.get(br.getStrategy().getName()).put(br.getName(), 0);
+				}
+			}
+			//Once all brokers were checked, we can perform the trades!
+			stats.removeAll();
+			DataVisualizationCreator creator = new DataVisualizationCreator();
+			creator.createCharts(brokers);
+		} else if ("addTableRow".equals(command)) {
+			dtm.addRow(new String[3]);
+		} else if ("remTableRow".equals(command)) {
+			int selectedRow = table.getSelectedRow();
+			if (selectedRow != -1)
+				dtm.removeRow(selectedRow);
+		}
+		
+		
+	}
+
+}
